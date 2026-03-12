@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Murmur — Voice Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:          #F8F6F1;
+  --bg2:         #F0EDE5;
+  --sidebar:     #18171A;
+  --surface:     #FFFFFF;
+  --border:      #E4DFD6;
+  --border-d:    #2E2B32;
+  --accent:      #7C5CBF;
+  --accent-dim:  rgba(124,92,191,0.12);
+  --accent-glow: rgba(124,92,191,0.25);
+  --text:        #18171A;
+  --text-inv:    #F8F6F1;
+  --muted:       #9490A0;
+  --muted-inv:   #6A6570;
+  --danger:      #C0392B;
+  --success:     #1A7A4A;
+  --r:           8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Manrope', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  height: 100vh;
+}
+
+/* ─────────────────────────────────────────
+   PRIVACY MODAL
+───────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(24,23,26,0.65);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-backdrop.hidden { display: none; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.1);
+  overflow: hidden;
+  animation: slideUp 0.35s cubic-bezier(0.34,1.4,0.64,1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+  background: var(--sidebar);
+  padding: 28px 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-header::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(124,92,191,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.modal-logo {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+}
+
+.modal-logo-icon {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.modal-logo-icon svg { width: 18px; height: 18px; fill: white; }
+
+.modal-logo-name {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-inv);
+  letter-spacing: -0.3px;
+}
+
+.modal-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-inv);
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.modal-body {
+  padding: 24px 28px 28px;
+}
+
+.privacy-section {
+  margin-bottom: 20px;
+}
+
+.privacy-section h3 {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.privacy-item {
+  display: flex;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+
+.privacy-item:last-child { margin-bottom: 0; }
+
+.pi-icon {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pi-icon.green  { background: rgba(26,122,74,0.1); }
+.pi-icon.purple { background: rgba(124,92,191,0.1); }
+.pi-icon.amber  { background: rgba(180,120,20,0.1); }
+.pi-icon svg { width: 14px; height: 14px; }
+
+.pi-text strong {
+  display: block;
+  font-size: 13px; font-weight: 600;
+  color: var(--text); margin-bottom: 2px;
+}
+.pi-text p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.pi-text a { color: var(--accent); text-decoration: none; }
+.pi-text a:hover { text-decoration: underline; }
+
+.modal-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+.modal-consent-text {
+  font-size: 12px; color: var(--muted); line-height: 1.65; margin-bottom: 18px;
+}
+
+.modal-btn {
+  width: 100%; padding: 13px;
+  border-radius: var(--r); border: none;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.18s;
+}
+
+.modal-btn.primary {
+  background: var(--accent); color: white;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.modal-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+
+.modal-btn-row { display: flex; gap: 10px; margin-top: 10px; }
+
+.modal-btn.secondary {
+  flex: 1; background: var(--bg2); color: var(--muted);
+  border: 1px solid var(--border); font-size: 12px;
+}
+.modal-btn.secondary:hover { color: var(--text); border-color: var(--text); }
+
+/* ─────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────── */
+.sidebar {
+  background: var(--sidebar);
+  display: flex; flex-direction: column;
+  overflow: hidden; position: relative;
+}
+
+.sidebar::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+.sidebar > * { position: relative; z-index: 1; }
+
+.brand {
+  padding: 22px 16px 18px;
+  border-bottom: 1px solid var(--border-d);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.brand-left { display: flex; align-items: center; gap: 10px; }
+
+.brand-icon {
+  width: 33px; height: 33px;
+  background: var(--accent); border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 10px rgba(124,92,191,0.4);
+}
+.brand-icon svg { width: 16px; height: 16px; fill: white; }
+
+.brand-name {
+  font-family: 'Fraunces', serif;
+  font-size: 20px; font-weight: 500;
+  color: var(--text-inv); letter-spacing: -0.2px;
+}
+
+.info-btn {
+  background: none; border: none; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted-inv); transition: all 0.15s;
+}
+.info-btn:hover { background: rgba(255,255,255,0.07); color: var(--text-inv); }
+.info-btn svg { width: 15px; height: 15px; stroke: currentColor; }
+
+.sidebar-search {
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--border-d);
+}
+
+.search-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.search-wrap svg {
+  position: absolute; left: 10px;
+  width: 13px; height: 13px;
+  stroke: var(--muted-inv); pointer-events: none;
+}
+.search-wrap input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-d);
+  color: var(--text-inv);
+  padding: 8px 10px 8px 30px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12.5px; border-radius: 6px; outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.search-wrap input::placeholder { color: var(--muted-inv); }
+.search-wrap input:focus { border-color: rgba(124,92,191,0.5); background: rgba(255,255,255,0.08); }
+
+.list-hdr {
+  padding: 11px 16px 6px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.list-hdr span {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted-inv);
+}
+.count-pill {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border-d);
+  color: var(--muted-inv);
+  font-size: 10px; font-weight: 500;
+  padding: 2px 8px; border-radius: 20px;
+}
+
+.notes-list {
+  flex: 1; overflow-y: auto;
+  padding: 4px 8px 16px;
+}
+.notes-list::-webkit-scrollbar { width: 2px; }
+.notes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+.note-item {
+  padding: 10px 11px; border-radius: 7px;
+  cursor: pointer; border: 1px solid transparent;
+  margin-bottom: 2px; transition: all 0.13s;
+}
+.note-item:hover { background: rgba(255,255,255,0.04); border-color: var(--border-d); }
+.note-item.active { background: rgba(124,92,191,0.14); border-color: rgba(124,92,191,0.3); }
+
+.ni-title {
+  font-size: 13px; font-weight: 500; color: var(--text-inv);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
+}
+.ni-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-inv); }
+.ni-dur {
+  background: rgba(124,92,191,0.15); color: #B09EDE;
+  font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
+}
+.ni-preview {
+  font-size: 11px; color: var(--muted-inv);
+  margin-top: 4px; font-style: italic; opacity: 0.65;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.empty-sidebar { padding: 36px 16px; text-align: center; color: var(--muted-inv); }
+.empty-icon-wrap {
+  width: 42px; height: 42px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border-d);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.empty-icon-wrap svg { width: 18px; height: 18px; stroke: var(--muted-inv); }
+.empty-sidebar p { font-size: 12px; line-height: 1.7; }
+
+/* ─────────────────────────────────────────
+   MAIN
+───────────────────────────────────────── */
+.main {
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg);
+}
+
+.recorder {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 26px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.rec-row { display: flex; align-items: center; gap: 16px; }
+
+.rec-btn {
+  width: 50px; height: 50px;
+  border-radius: 50%; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.34,1.5,0.64,1);
+}
+.rec-btn.start {
+  background: var(--accent);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.rec-btn.start:hover { transform: scale(1.08); box-shadow: 0 6px 22px var(--accent-glow); }
+.rec-btn.stop {
+  background: var(--danger);
+  animation: stopP 2s ease-in-out infinite;
+}
+@keyframes stopP {
+  0%,100% { box-shadow: 0 4px 14px rgba(192,57,43,0.3); }
+  50%      { box-shadow: 0 4px 24px rgba(192,57,43,0.55); }
+}
+.rec-btn svg { width: 19px; height: 19px; fill: white; }
+.rec-btn.stop svg { width: 13px; height: 13px; }
+
+.rec-meta { flex: none; }
+.rec-time {
+  font-family: 'Fraunces', serif;
+  font-size: 30px; font-weight: 300;
+  color: var(--text); letter-spacing: -0.5px;
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.rec-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--muted); margin-top: 2px; font-weight: 500;
+}
+.sdot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border); transition: all 0.3s; flex-shrink: 0;
+}
+.sdot.rec  { background: var(--danger); box-shadow: 0 0 0 3px rgba(192,57,43,0.2); animation: blink 1s infinite; }
+.sdot.play { background: var(--success); box-shadow: 0 0 0 3px rgba(26,122,74,0.2); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.wavebox {
+  flex: 1; height: 50px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; position: relative;
+  display: flex; align-items: center; padding: 0 12px; gap: 2px;
+}
+.wave-idle {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 11.5px; color: var(--muted); font-weight: 500; pointer-events: none;
+}
+.wave-idle svg { width: 13px; height: 13px; stroke: var(--muted); opacity: 0.5; }
+.wbar {
+  width: 2px; height: 3px; background: var(--border);
+  border-radius: 2px; transition: height 0.08s ease, background 0.08s ease; flex-shrink: 0;
+}
+
+.live-tx {
+  display: none;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 9px 14px; max-height: 72px; overflow-y: auto;
+  font-size: 13.5px; line-height: 1.7;
+}
+.live-tx.on { display: block; }
+.tx-f { color: var(--text); }
+.tx-i { color: var(--muted); font-style: italic; }
+
+.no-speech {
+  display: none; font-size: 12px; color: var(--danger);
+  padding: 6px 10px;
+  background: rgba(192,57,43,0.06); border: 1px solid rgba(192,57,43,0.18);
+  border-radius: 6px;
+}
+
+/* editor */
+.editor { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+
+.editor-bar {
+  padding: 16px 26px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; align-items: center; gap: 12px;
+}
+
+.editor-title {
+  flex: 1; background: transparent; border: none;
+  font-family: 'Fraunces', serif; font-size: 21px; font-weight: 500;
+  color: var(--text); outline: none; padding: 0; min-width: 0;
+}
+.editor-title::placeholder { color: var(--border); }
+
+.eact {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 6px;
+  border: 1px solid var(--border); background: transparent;
+  font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500;
+  color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.eact svg { width: 12px; height: 12px; stroke: currentColor; }
+.eact:hover { background: var(--bg2); border-color: var(--text); color: var(--text); }
+.eact.dl:hover  { border-color: var(--accent); color: var(--accent); }
+.eact.del:hover { border-color: var(--danger); color: var(--danger); }
+.eact:disabled  { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+.player {
+  padding: 13px 26px; border-bottom: 1px solid var(--border); background: var(--bg2);
+}
+.player-row { display: flex; align-items: center; gap: 13px; }
+
+.play-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: var(--text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.14s; flex-shrink: 0;
+}
+.play-btn svg { width: 12px; height: 12px; fill: var(--bg); }
+.play-btn:hover { background: var(--accent); transform: scale(1.08); }
+
+.prog-track {
+  flex: 1; height: 3px; background: var(--border); border-radius: 2px; cursor: pointer; position: relative;
+}
+.prog-fill {
+  height: 100%; width: 0%; background: var(--accent);
+  border-radius: 2px; transition: width 0.1s linear; position: relative;
+}
+.prog-fill::after {
+  content: ''; position: absolute; right: -4px; top: 50%; transform: translateY(-50%);
+  width: 8px; height: 8px; background: var(--accent); border-radius: 50%; opacity: 0; transition: opacity 0.15s;
+}
+.prog-track:hover .prog-fill::after { opacity: 1; }
+
+.time-lbl {
+  font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums;
+  white-space: nowrap; min-width: 78px; text-align: right;
+}
+
+.notes-body {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 18px 26px 14px; gap: 10px;
+}
+.notes-hdr { display: flex; align-items: center; justify-content: space-between; }
+.notes-lbl {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted);
+}
+.save-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); transition: color 0.3s; }
+.save-badge svg { width: 11px; height: 11px; stroke: currentColor; }
+.save-badge.saved { color: var(--success); }
+
+.note-ta {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Manrope', sans-serif;
+  font-size: 13.5px; line-height: 1.85; padding: 15px 17px;
+  resize: none; outline: none; border-radius: 10px; min-height: 0;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.note-ta:focus { border-color: rgba(124,92,191,0.4); box-shadow: 0 0 0 3px var(--accent-dim); }
+.note-ta::placeholder { color: var(--border); }
+
+.empty-main {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; text-align: center; padding: 40px;
+}
+.empty-main-icon {
+  width: 60px; height: 60px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.empty-main-icon svg { width: 26px; height: 26px; stroke: var(--border); }
+.empty-main h3 {
+  font-family: 'Fraunces', serif; font-size: 18px;
+  font-weight: 300; font-style: italic; color: var(--text); opacity: 0.35;
+}
+.empty-main p { font-size: 13px; color: var(--muted); max-width: 250px; line-height: 1.7; }
+
+.toast {
+  position: fixed; bottom: 22px;
+  left: 50%; transform: translateX(-50%) translateY(50px);
+  background: var(--text); color: var(--text-inv);
+  padding: 9px 18px; font-size: 13px; font-weight: 500;
+  border-radius: 100px; opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 500; white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══════════ PRIVACY MODAL ══════════ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+    <div class="modal-header">
+      <div class="modal-logo">
+        <div class="modal-logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="modal-logo-name">Murmur</span>
+      </div>
+      <h2 id="modalTitle">Before you start recording, here's how Murmur handles your data.</h2>
+    </div>
+
+    <div class="modal-body">
+      <div class="privacy-section">
+        <h3>What stays on your device</h3>
+
+        <div class="privacy-item">
+          <div class="pi-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#1A7A4A">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div class="pi-text">
+            <strong>Audio stays in your browser</strong>
+            <p>Recordings are stored in memory only — never uploaded. They are lost when you close or reload the page.</p>
+          </div>
+        </div>
+
+        <div class="privacy-item">
+          <div class="pi-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#1A7A4A">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div class="pi-text">
+            <strong>Notes &amp; transcripts saved locally</strong>
+            <p>Titles and transcript text are saved in your browser's <code style="font-size:11px;background:var(--bg2);padding:1px 4px;border-radius:3px">localStorage</code> — on your device only, never sent anywhere.</p>
+          </div>
+        </div>
+
+        <div class="privacy-item">
+          <div class="pi-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7C5CBF">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div class="pi-text">
+            <strong>No accounts, tracking, or ads</strong>
+            <p>Murmur is fully client-side. No sign-ups, no analytics, no cookies, no third-party scripts — except for the transcription service below.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="privacy-section">
+        <h3>Third-party transcription notice</h3>
+
+        <div class="privacy-item">
+          <div class="pi-icon amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#B47814">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="pi-text">
+            <strong>Live transcription sends audio to Google</strong>
+            <p>The Web Speech API used for real-time transcription routes your voice through Google's servers in Chrome and Edge. Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> applies. Avoid speaking sensitive information if this is a concern.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-divider"></div>
+
+      <p class="modal-consent-text">
+        By continuing you acknowledge that live transcription sends audio to Google for processing. You can still record and take notes without transcription — just mute yourself or skip speaking after starting a recording.
+      </p>
+
+      <button class="modal-btn primary" id="acceptBtn">I Understand — Let's Go</button>
+      <div class="modal-btn-row">
+        <button class="modal-btn secondary" id="closeModalBtn">Close — Review via ⓘ anytime</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-left">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="brand-name">Murmur</span>
+    </div>
+    <button class="info-btn" id="showPrivacyBtn" aria-label="Show privacy notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="2.5"/><line x1="12" y1="12" x2="12" y2="16"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="sidebar-search">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Search recordings…" />
+    </div>
+  </div>
+
+  <div class="list-hdr">
+    <span>Recordings</span>
+    <span class="count-pill" id="noteCount">0</span>
+  </div>
+
+  <div class="notes-list" id="notesList">
+    <div class="empty-sidebar">
+      <div class="empty-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        </svg>
+      </div>
+      <p>No recordings yet.<br>Hit record to begin.</p>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<main class="main">
+
+  <div class="recorder">
+    <div class="rec-row">
+      <button class="rec-btn start" id="recBtn" aria-label="Start recording">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="rec-meta">
+        <div class="rec-time" id="recTimer">0:00</div>
+        <div class="rec-status">
+          <div class="sdot" id="statusDot"></div>
+          <span id="recLabel">Ready to record</span>
+        </div>
+      </div>
+      <div class="wavebox" id="wavebox">
+        <div class="wave-idle" id="waveIdle">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+            <path d="M3 12h2l2-8 2 16 2-10 2 6 2-3h4"/>
+          </svg>
+          Press record to begin
+        </div>
+      </div>
+    </div>
+    <div class="no-speech" id="noSpeech">No speech detected — check microphone permissions.</div>
+    <div class="live-tx" id="liveTx">
+      <span class="tx-f" id="txF"></span><span class="tx-i" id="txI"></span>
+    </div>
+  </div>
+
+  <div class="editor" id="noteEditor">
+    <div class="editor-bar">
+      <input type="text" class="editor-title" id="noteTitleInput" placeholder="Untitled Recording" />
+      <button class="eact dl" id="downloadBtn" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download
+      </button>
+      <button class="eact del" id="deleteBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+        Delete
+      </button>
+    </div>
+
+    <div class="player">
+      <div class="player-row">
+        <button class="play-btn" id="playBtn" aria-label="Play">
+          <svg id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <div class="prog-track" id="progTrack">
+          <div class="prog-fill" id="progFill"></div>
+        </div>
+        <span class="time-lbl" id="timeLbl">0:00 / 0:00</span>
+      </div>
+    </div>
+
+    <div class="notes-body">
+      <div class="notes-hdr">
+        <span class="notes-lbl">Transcript &amp; Notes</span>
+        <div class="save-badge" id="saveBadge">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Saved
+        </div>
+      </div>
+      <textarea class="note-ta" id="noteText" placeholder="Transcript and notes appear here — edit freely…"></textarea>
+    </div>
+  </div>
+
+  <div class="empty-main" id="emptyMain">
+    <div class="empty-main-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+      </svg>
+    </div>
+    <h3>Select a recording</h3>
+    <p>Your recordings appear in the sidebar. Press the button above to start.</p>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── MODAL ──────────────────────────────────────────
+const backdrop = document.getElementById('modalBackdrop');
+
+if (!localStorage.getItem('murmur_privacy_v1')) {
+  backdrop.classList.remove('hidden');
+} else {
+  backdrop.classList.add('hidden');
+}
+
+document.getElementById('acceptBtn').onclick = () => {
+  localStorage.setItem('murmur_privacy_v1', '1');
+  backdrop.classList.add('hidden');
+};
+
+document.getElementById('closeModalBtn').onclick = () => {
+  backdrop.classList.add('hidden');
+};
+
+document.getElementById('showPrivacyBtn').onclick = () => {
+  backdrop.classList.remove('hidden');
+};
+
+// ── STATE ──────────────────────────────────────────
+let notes = JSON.parse(localStorage.getItem('murmur_notes') || '[]');
+let activeNoteId = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let recInterval = null;
+let recSeconds = 0;
+let audioCtx = null;
+let analyser = null;
+let animFrame = null;
+let currentAudio = null;
+let audioInterval = null;
+let saveTimeout = null;
+let recognition = null;
+let finalTx = '';
+let interimTx = '';
+let bars = [];
+
+// ── WAVEFORM ───────────────────────────────────────
+const wavebox = document.getElementById('wavebox');
+
+function initBars() {
+  wavebox.querySelectorAll('.wbar').forEach(b => b.remove());
+  bars = [];
+  const n = Math.floor((wavebox.offsetWidth - 24) / 4);
+  for (let i = 0; i < n; i++) {
+    const b = document.createElement('div');
+    b.className = 'wbar';
+    wavebox.appendChild(b);
+    bars.push(b);
+  }
+}
+initBars();
+window.addEventListener('resize', initBars);
+
+function animWave() {
+  if (!analyser) return;
+  const d = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(d);
+  const step = Math.floor(d.length / bars.length);
+  bars.forEach((b, i) => {
+    const v = d[i * step] / 255;
+    b.style.height = Math.max(3, v * 42) + 'px';
+    b.style.background = v > 0.45
+      ? `rgba(124,92,191,${0.45 + v * 0.55})`
+      : `rgba(148,144,160,${0.15 + v * 0.55})`;
+  });
+  animFrame = requestAnimationFrame(animWave);
+}
+
+function resetBars() {
+  bars.forEach(b => { b.style.height = '3px'; b.style.background = 'var(--border)'; });
+}
+
+// ── RECORDING ─────────────────────────────────────
+const recBtn    = document.getElementById('recBtn');
+const recTimer  = document.getElementById('recTimer');
+const recLabel  = document.getElementById('recLabel');
+const statusDot = document.getElementById('statusDot');
+
+recBtn.onclick = async () => {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') await startRec();
+  else stopRec();
+};
+
+async function startRec() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const url  = URL.createObjectURL(blob);
+      const combined = ((finalTx || '') + ' ' + (interimTx || '')).trim();
+      saveNote(url, blob, recSeconds, combined);
+      stream.getTracks().forEach(t => t.stop());
+      if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      analyser = null;
+    };
+
+    mediaRecorder.start(100);
+    recSeconds = 0;
+    recInterval = setInterval(() => { recSeconds++; recTimer.textContent = fmt(recSeconds); }, 1000);
+
+    finalTx = ''; interimTx = '';
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      recognition.onresult = e => {
+        interimTx = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = (e.results[i]?.[0]?.transcript) || '';
+          if (e.results[i].isFinal) finalTx += t + ' ';
+          else interimTx += t;
+        }
+        document.getElementById('txF').textContent = finalTx;
+        document.getElementById('txI').textContent = interimTx;
+        const lt = document.getElementById('liveTx');
+        lt.scrollTop = lt.scrollHeight;
+        document.getElementById('noSpeech').style.display = 'none';
+      };
+      recognition.onerror = e => {
+        if (e.error === 'no-speech') document.getElementById('noSpeech').style.display = 'block';
+        else if (e.error === 'not-allowed') toast('Microphone permission denied');
+      };
+      recognition.onend = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') try { recognition.start(); } catch(e) {}
+      };
+      recognition.start();
+      document.getElementById('liveTx').classList.add('on');
+    }
+
+    document.getElementById('waveIdle').style.display = 'none';
+    animWave();
+    recBtn.className = 'rec-btn stop';
+    recBtn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="white"/></svg>';
+    recLabel.textContent = 'Recording…';
+    statusDot.className = 'sdot rec';
+  } catch(err) {
+    toast('Microphone access denied');
+  }
+}
+
+function stopRec() {
+  if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  clearInterval(recInterval);
+  cancelAnimationFrame(animFrame);
+  resetBars();
+  document.getElementById('waveIdle').style.display = '';
+  recBtn.className = 'rec-btn start';
+  recBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  recTimer.textContent = '0:00';
+  recLabel.textContent = 'Ready to record';
+  statusDot.className = 'sdot';
+  document.getElementById('liveTx').classList.remove('on');
+  document.getElementById('txF').textContent = '';
+  document.getElementById('txI').textContent = '';
+  document.getElementById('noSpeech').style.display = 'none';
+}
+
+function saveNote(audioUrl, audioBlob, duration, transcript) {
+  const now = new Date();
+  const note = {
+    id: Date.now().toString(),
+    title: `Recording — ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`,
+    audioUrl, audioBlob, duration,
+    text: transcript || '',
+    created: now.toISOString()
+  };
+  notes.unshift(note);
+  persist(); renderList(); openNote(note.id);
+  toast(transcript ? 'Saved with transcript' : 'Recording saved');
+}
+
+function openNote(id) {
+  activeNoteId = id;
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  document.getElementById('noteEditor').style.display = 'flex';
+  document.getElementById('emptyMain').style.display = 'none';
+  document.getElementById('noteTitleInput').value = note.title;
+  document.getElementById('noteText').value = note.text || '';
+  const sb = document.getElementById('saveBadge');
+  sb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Saved`;
+  sb.className = 'save-badge';
+  document.getElementById('downloadBtn').disabled = !note.audioBlob;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; clearInterval(audioInterval); }
+  if (note.audioUrl) {
+    currentAudio = new Audio(note.audioUrl);
+    currentAudio.onended = () => {
+      document.getElementById('playIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+      statusDot.className = 'sdot';
+      clearInterval(audioInterval);
+      document.getElementById('progFill').style.width = '0%';
+      document.getElementById('timeLbl').textContent = `0:00 / ${fmt(note.duration)}`;
+    };
+  }
+  document.getElementById('timeLbl').textContent = `0:00 / ${fmt(note.duration)}`;
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('playIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  renderList();
+}
+
+document.getElementById('playBtn').onclick = () => {
+  if (!currentAudio) return;
+  if (currentAudio.paused) {
+    currentAudio.play();
+    document.getElementById('playIcon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    statusDot.className = 'sdot play';
+    const note = notes.find(n => n.id === activeNoteId);
+    audioInterval = setInterval(() => {
+      const pct = (currentAudio.currentTime / (note?.duration || 1)) * 100;
+      document.getElementById('progFill').style.width = Math.min(pct,100) + '%';
+      document.getElementById('timeLbl').textContent =
+        `${fmt(Math.floor(currentAudio.currentTime))} / ${fmt(note?.duration||0)}`;
+    }, 100);
+  } else {
+    currentAudio.pause();
+    document.getElementById('playIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    statusDot.className = 'sdot';
+    clearInterval(audioInterval);
+  }
+};
+
+document.getElementById('progTrack').onclick = e => {
+  if (!currentAudio) return;
+  const note = notes.find(n => n.id === activeNoteId);
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  currentAudio.currentTime = pct * (note?.duration || 0);
+  document.getElementById('progFill').style.width = (pct*100) + '%';
+};
+
+document.getElementById('noteTitleInput').oninput = e => {
+  const note = notes.find(n => n.id === activeNoteId);
+  if (!note) return;
+  note.title = e.target.value || 'Untitled';
+  scheduleSave();
+};
+
+document.getElementById('noteText').oninput = e => {
+  const note = notes.find(n => n.id === activeNoteId);
+  if (!note) return;
+  note.text = e.target.value;
+  scheduleSave();
+};
+
+function scheduleSave() {
+  const sb = document.getElementById('saveBadge');
+  sb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Saving…`;
+  sb.className = 'save-badge';
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    persist(); renderList();
+    sb.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Saved`;
+    sb.className = 'save-badge saved';
+    setTimeout(() => { sb.className = 'save-badge'; }, 1800);
+  }, 600);
+}
+
+document.getElementById('downloadBtn').onclick = () => {
+  const note = notes.find(n => n.id === activeNoteId);
+  if (!note?.audioBlob) { toast('Audio unavailable after page reload'); return; }
+  const name = (note.title || 'recording').replace(/[^a-z0-9_\- ]/gi,'_').trim();
+  const url = URL.createObjectURL(note.audioBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${name}.webm`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Downloading…');
+};
+
+document.getElementById('deleteBtn').onclick = () => {
+  if (!activeNoteId) return;
+  notes = notes.filter(n => n.id !== activeNoteId);
+  persist(); activeNoteId = null;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  document.getElementById('noteEditor').style.display = 'none';
+  document.getElementById('emptyMain').style.display = 'flex';
+  statusDot.className = 'sdot';
+  renderList(); toast('Recording deleted');
+};
+
+document.getElementById('searchInput').oninput = e => renderList(e.target.value);
+
+function renderList(query = '') {
+  const list = document.getElementById('notesList');
+  const q = query.toLowerCase();
+  const filtered = notes.filter(n =>
+    (n.title||'').toLowerCase().includes(q) || (n.text||'').toLowerCase().includes(q)
+  );
+  document.getElementById('noteCount').textContent = notes.length;
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-sidebar"><div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div><p>${notes.length?'No results found.':'No recordings yet.<br>Hit record to begin.'}</p></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(n => `
+    <div class="note-item ${n.id===activeNoteId?'active':''}" data-id="${n.id}">
+      <div class="ni-title">${esc(n.title||'Untitled')}</div>
+      <div class="ni-meta"><span>${fmtDate(n.created)}</span><span class="ni-dur">${fmt(n.duration)}</span></div>
+      ${n.text?`<div class="ni-preview">${esc(n.text.slice(0,55))}…</div>`:''}
+    </div>`).join('');
+  list.querySelectorAll('.note-item').forEach(el => { el.onclick = () => openNote(el.dataset.id); });
+}
+
+function fmt(s) { s=Math.floor(s||0); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function persist() {
+  try { localStorage.setItem('murmur_notes', JSON.stringify(notes.map(({audioBlob,...r})=>r))); } catch(e) {}
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+notes = notes.map(n => ({...n, audioBlob: null, audioUrl: null}));
+renderList();
+</script>
+</body>
+</html>
