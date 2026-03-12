@@ -920,9 +920,14 @@ async function startRec() {
       recognition.onerror = e => {
         if (e.error === 'no-speech') document.getElementById('noSpeech').style.display = 'block';
         else if (e.error === 'not-allowed') toast('Microphone permission denied');
+        // network / aborted errors are common on mobile — let onend handle restart
       };
       recognition.onend = () => {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') try { recognition.start(); } catch(e) {}
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          setTimeout(() => {
+            try { recognition.start(); } catch(e) {}
+          }, 150);
+        }
       };
       recognition.start();
       document.getElementById('liveTx').classList.add('on');
