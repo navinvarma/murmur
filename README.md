@@ -4,6 +4,8 @@ A minimal single-page app for voice recording and transcription. No server requi
 
 **[Try it →](https://navinvarma.github.io/murmur)**
 
+![Murmur screenshot](screenshot.png)
+
 ## Usage
 
 Open `index.html` in a modern browser (or visit the link above). Allow microphone access, record, and get a transcription.
