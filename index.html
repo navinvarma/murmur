@@ -35,6 +35,32 @@ body {
   display: grid;
   grid-template-columns: 290px 1fr;
   height: 100vh;
+  height: 100dvh;
+}
+
+@media (max-width: 700px) {
+  html, body { overflow: auto; height: auto; }
+  body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    height: auto;
+    min-height: 100dvh;
+  }
+  .sidebar {
+    max-height: none;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--border-d);
+  }
+  .notes-list { max-height: 220px; overflow-y: auto; }
+  .main { height: auto; overflow: visible; }
+  .recorder { padding: 14px 16px; }
+  .editor { display: flex; overflow: visible; }
+  .editor-bar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .notes-body { padding: 14px 16px; overflow: visible; }
+  .note-ta { min-height: 180px; flex: none; }
+  .player { padding: 10px 16px; }
+  .empty-main { padding: 24px 16px; }
 }
 
 /* ─────────────────────────────────────────
