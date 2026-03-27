@@ -618,7 +618,7 @@ body {
       </div>
 
       <div class="privacy-section">
-        <h3>Third-party transcription notice</h3>
+        <h3>Transcription</h3>
 
         <div class="privacy-item">
           <div class="pi-icon amber">
@@ -628,7 +628,20 @@ body {
           </div>
           <div class="pi-text">
             <strong>Live transcription sends audio to Google</strong>
-            <p>The Web Speech API used for real-time transcription routes your voice through Google's servers in Chrome and Edge. Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> applies. Avoid speaking sensitive information if this is a concern.</p>
+            <p>This page uses the Web Speech API, which routes your voice through Google's servers in Chrome and Edge. Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a> applies. Avoid sensitive information if this is a concern.</p>
+          </div>
+        </div>
+
+        <div class="privacy-item">
+          <div class="pi-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7C5CBF">
+              <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.1 6.7-5.2 8.2L15 21H9l.2-1.8A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+              <path d="M9 11h.01M12 11h.01M15 11h.01"/>
+            </svg>
+          </div>
+          <div class="pi-text">
+            <strong>Prefer fully local transcription?</strong>
+            <p>Try <a href="transcribe.html">Murmur AI</a> — it runs Whisper entirely in your browser using WebGPU. Nothing leaves your device.</p>
           </div>
         </div>
       </div>
@@ -636,7 +649,7 @@ body {
       <div class="modal-divider"></div>
 
       <p class="modal-consent-text">
-        By continuing you acknowledge that live transcription sends audio to Google for processing. You can still record and take notes without transcription — just mute yourself or skip speaking after starting a recording.
+        By continuing you acknowledge that live transcription on this page sends audio to Google for processing. For fully private transcription, use <a href="transcribe.html" style="color:var(--accent)">Murmur AI</a> instead.
       </p>
 
       <button class="modal-btn primary" id="acceptBtn">I Understand — Let's Go</button>
@@ -656,6 +669,12 @@ body {
       </div>
       <span class="brand-name">Murmur</span>
     </div>
+    <a class="info-btn" href="transcribe.html" title="AI transcription (local Whisper)" style="text-decoration:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;stroke:currentColor">
+        <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.1 6.7-5.2 8.2L15 21H9l.2-1.8A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+        <path d="M9 11h.01M12 11h.01M15 11h.01"/>
+      </svg>
+    </a>
     <button class="info-btn" id="showPrivacyBtn" aria-label="Show privacy notice">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="2.5"/><line x1="12" y1="12" x2="12" y2="16"/>
