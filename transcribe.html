@@ -204,6 +204,14 @@ body {
   font-size: 10px; font-weight: 600;
   letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted);
 }
+.lang-badge {
+  display: none;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+  background: var(--accent-dim); color: var(--accent);
+  padding: 2px 8px; border-radius: 20px;
+  border: 1px solid rgba(124,92,191,0.2);
+  margin-left: 8px;
+}
 .actions { display: flex; gap: 6px; }
 .act-btn {
   display: flex; align-items: center; gap: 5px;
@@ -331,7 +339,7 @@ body {
   <!-- Transcript -->
   <div class="panel">
     <div class="transcript-hdr">
-      <span class="transcript-lbl">Transcript</span>
+      <span class="transcript-lbl">Transcript</span><span class="lang-badge" id="langBadge"></span>
       <div class="actions">
         <button class="act-btn" id="copyBtn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -361,6 +369,7 @@ body {
 
 <script type="module">
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js';
+import { franc } from 'https://esm.sh/franc-min@6';
 
 env.useBrowserCache  = true;   // cache model weights in IndexedDB
 env.allowLocalModels = false;
@@ -566,6 +575,10 @@ async function runTranscription(blob) {
     transcriptTa.removeAttribute('readonly');
     copyBtn.disabled  = !text;
     clearBtn.disabled = !text;
+    const lang = text ? detectLang(text) : null;
+    const langBadge = $('langBadge');
+    langBadge.textContent    = lang || '';
+    langBadge.style.display  = lang ? 'inline' : 'none';
     toast(text ? 'Transcription complete' : 'No speech detected');
   } catch (err) {
     toast('Transcription failed: ' + err.message);
@@ -589,7 +602,29 @@ clearBtn.onclick = () => {
   transcriptTa.setAttribute('readonly', '');
   copyBtn.disabled  = true;
   clearBtn.disabled = true;
+  const langBadge = $('langBadge');
+  langBadge.textContent   = '';
+  langBadge.style.display = 'none';
 };
+
+// ── LANGUAGE DETECTION ───────────────────────────────
+const ISO3_TO_1 = {
+  eng:'en', fra:'fr', deu:'de', spa:'es', por:'pt', ita:'it',
+  nld:'nl', pol:'pl', vie:'vi', cmn:'zh', ara:'ar', jpn:'ja',
+  kor:'ko', rus:'ru', tur:'tr', swe:'sv', dan:'da', fin:'fi',
+  nor:'no', hun:'hu', ces:'cs', ron:'ro', ukr:'uk', cat:'ca',
+  ind:'id', hrv:'hr', ell:'el', heb:'he', tha:'th', hin:'hi',
+};
+
+function detectLang(text) {
+  if (!text || text.length < 20) return null;
+  const code3 = franc(text, { minLength: 20 });
+  if (!code3 || code3 === 'und') return null;
+  const code1 = ISO3_TO_1[code3] || code3;
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(code1);
+  } catch (_) { return null; }
+}
 
 // ── UTILS ────────────────────────────────────────────
 function fmt(s) {
