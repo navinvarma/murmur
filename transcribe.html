@@ -557,19 +557,9 @@ function stopRec() {
 
 // ── TRANSCRIPTION ───────────────────────────────────
 async function runTranscription(blob) {
+  const blobUrl = URL.createObjectURL(blob);
   try {
-    // Decode audio and resample to 16 kHz (what Whisper expects)
-    const arrayBuffer = await blob.arrayBuffer();
-    const decodeCtx  = new AudioContext();
-    const decoded    = await decodeCtx.decodeAudioData(arrayBuffer);
-    const audioArray = new Float32Array(decoded.getChannelData(0));
-    const sampleRate = decoded.sampleRate;
-    await decodeCtx.close();
-
-    const result = await transcriber(
-      { array: audioArray, sampling_rate: sampleRate },
-      { chunk_length_s: 30, stride_length_s: 5 }
-    );
+    const result = await transcriber(blobUrl, { chunk_length_s: 30, stride_length_s: 5 });
 
     const text = (result?.text || '').trim();
     transcriptTa.value = text;
@@ -581,6 +571,7 @@ async function runTranscription(blob) {
     toast('Transcription failed: ' + err.message);
     console.error(err);
   } finally {
+    URL.revokeObjectURL(blobUrl);
     recLabel.textContent = 'Ready to record';
     statusDot.className  = 'sdot';
     recBtn.disabled      = false;
