@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Murmur — Voice Notes</title>
+<meta name="description" content="Murmur is a private, browser-based voice notes app with live transcription. Record, transcribe, and edit — no sign-ups, no servers, no data leaves your device.">
+<meta name="keywords" content="voice notes, speech to text, audio transcription, browser recorder, private transcription, voice recorder, Web Speech API">
+<meta property="og:title" content="Murmur — Private Voice Notes">
+<meta property="og:description" content="Record voice notes with live transcription, entirely in your browser. No accounts, no uploads — your audio stays on your device.">
+<meta property="og:type" content="website">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -268,7 +273,7 @@ body {
   color: var(--muted-inv); transition: all 0.15s;
 }
 .info-btn:hover { background: rgba(255,255,255,0.07); color: var(--text-inv); }
-.info-btn svg { width: 15px; height: 15px; stroke: currentColor; }
+.info-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .sidebar-search {
   padding: 11px 13px;
@@ -282,6 +287,7 @@ body {
   position: absolute; left: 10px;
   width: 13px; height: 13px;
   stroke: var(--muted-inv); pointer-events: none;
+  fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
 .search-wrap input {
   width: 100%;
@@ -352,6 +358,27 @@ body {
 }
 .empty-icon-wrap svg { width: 18px; height: 18px; stroke: var(--muted-inv); }
 .empty-sidebar p { font-size: 12px; line-height: 1.7; }
+
+.ai-promo {
+  display: flex; align-items: center; gap: 10px;
+  margin: 8px 10px 14px; padding: 11px 12px;
+  background: rgba(124,92,191,0.1);
+  border: 1px solid rgba(124,92,191,0.22);
+  border-radius: 9px; text-decoration: none;
+  transition: all 0.15s; cursor: pointer;
+}
+.ai-promo:hover { background: rgba(124,92,191,0.18); border-color: rgba(124,92,191,0.4); }
+.ai-promo-icon {
+  width: 32px; height: 32px; flex-shrink: 0;
+  background: var(--accent); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-promo-icon svg { width: 15px; height: 15px; }
+.ai-promo-text { flex: 1; min-width: 0; }
+.ai-promo-text strong { display: block; font-size: 12px; font-weight: 600; color: var(--text-inv); }
+.ai-promo-text span { font-size: 11px; color: var(--muted-inv); line-height: 1.5; }
+.ai-promo-arrow { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted-inv); transition: color 0.15s; }
+.ai-promo:hover .ai-promo-arrow { color: var(--text-inv); }
 
 /* ─────────────────────────────────────────
    MAIN
@@ -471,7 +498,7 @@ body {
   font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500;
   color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
 }
-.eact svg { width: 12px; height: 12px; stroke: currentColor; }
+.eact svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .eact:hover { background: var(--bg2); border-color: var(--text); color: var(--text); }
 .eact.dl:hover  { border-color: var(--accent); color: var(--accent); }
 .eact.del:hover { border-color: var(--danger); color: var(--danger); }
@@ -669,9 +696,8 @@ body {
       </div>
       <span class="brand-name">Murmur</span>
     </div>
-    <a href="transcribe.html" style="font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;padding:4px 8px;border:1px solid rgba(124,92,191,0.3);border-radius:5px;background:rgba(124,92,191,0.08);white-space:nowrap;transition:all 0.15s;" onmouseover="this.style.background='rgba(124,92,191,0.16)'" onmouseout="this.style.background='rgba(124,92,191,0.08)'">Try Murmur AI</a>
     <button class="info-btn" id="showPrivacyBtn" aria-label="Show privacy notice">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="2.5"/><line x1="12" y1="12" x2="12" y2="16"/>
       </svg>
     </button>
@@ -679,7 +705,7 @@ body {
 
   <div class="sidebar-search">
     <div class="search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
       <input type="text" id="searchInput" placeholder="Search recordings…" />
@@ -702,6 +728,22 @@ body {
       <p>No recordings yet.<br>Hit record to begin.</p>
     </div>
   </div>
+
+  <a class="ai-promo" href="transcribe.html">
+    <div class="ai-promo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.1 6.7-5.2 8.2L15 21H9l.2-1.8A9 9 0 0 1 3 11a9 9 0 0 1 9-9z"/>
+        <path d="M9 11h.01M12 11h.01M15 11h.01"/>
+      </svg>
+    </div>
+    <div class="ai-promo-text">
+      <strong>Murmur AI</strong>
+      <span>Transcribe audio files locally with Whisper. Supports MP3, WAV, WebM, FLAC &amp; more — 100% private.</span>
+    </div>
+    <svg class="ai-promo-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  </a>
 </aside>
 
 <!-- ══════════ MAIN ══════════ -->
@@ -738,14 +780,14 @@ body {
     <div class="editor-bar">
       <input type="text" class="editor-title" id="noteTitleInput" placeholder="Untitled Recording" />
       <button class="eact dl" id="downloadBtn" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
         Download
       </button>
       <button class="eact del" id="deleteBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24">
           <polyline points="3 6 5 6 21 6"/>
           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
           <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -853,7 +895,7 @@ function initBars() {
   }
 }
 initBars();
-window.addEventListener('resize', initBars);
+{ let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(initBars, 150); }); }
 
 function animWave() {
   if (!analyser) return;
